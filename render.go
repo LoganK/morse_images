@@ -1,12 +1,20 @@
+//go:generate go-bindata -pkg morse_images -o bindata.go Dah_Dah.png Dah_Dit.png Dah_Shh.png Dit_Dah.png Dit_Dit.png Dit_Shh.png Shh_Dah.png Shh_Dit.png Shh_Shh.png
 package morse_images
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/fogleman/gg"
 	"github.com/martinlindhe/morse"
 	"image"
+	"io"
 	_ "image/png"
 	"os"
+)
+
+const (
+	// Attempt to open $PWD/<image> instead of the current bindata.
+	USE_LOCAL_ASSETS = false
 )
 
 // Accepts a morse message, returns a list of file names of the form:
@@ -59,13 +67,25 @@ func RenderMessage(s string) (*gg.Context, error) {
 			continue
 		}
 
-		f, err := os.Open(file)
-		if err != nil {
-			return nil, fmt.Errorf("unable to open file %s: %s", file, err)
-		}
-		defer f.Close()
+		var data io.Reader
+		if USE_LOCAL_ASSETS {
+			f, err := os.Open(file);
+			if err != nil {
+				return nil, fmt.Errorf("unable to open file %s: %s", file, err)
+			}
+			defer f.Close()
 
-		img, _, err := image.Decode(f)
+			data = f
+		} else {
+			f, err := Asset(file)
+			if err != nil {
+				return nil, fmt.Errorf("unable to open asset %s: %s", file, err)
+			}
+
+			data = bytes.NewReader(f)
+		}
+
+		img, _, err := image.Decode(data)
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode file %s: %s", file, err)
 		}
