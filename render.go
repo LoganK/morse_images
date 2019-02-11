@@ -21,7 +21,12 @@ func asImageNames(morse string) ([]string, error) {
 		} else if r == '-' {
 			els = append(els, "Dah")
 		} else if r == '/' {
-			els = append(els, "Shh", "Shh")
+			// We already get the spaces around the word separator.
+			// Only insert additional space if we weren't going to
+			// get a full "Shh_Shh" image in between words.
+			if (len(els)%2) == 0 {
+				els = append(els, "Shh")
+			}
 		} else {
 			return nil, fmt.Errorf("unknown morse symbol: %c (%U)", r, r)
 		}
@@ -80,14 +85,14 @@ func RenderMessage(s string) (*gg.Context, error) {
 
 	padding := 10
 	needWidth := len(files)*maxWidth + ((len(files) + 1) * padding)
-	needHeight := maxHeight * 2 * padding
+	needHeight := maxHeight + 2 * padding
 	g := gg.NewContext(needWidth, needHeight)
 
 	x := padding + (maxWidth / 2)
 	y := padding + (maxHeight / 2)
 	for _, imgFile := range files {
 		g.DrawImageAnchored(morseImages[imgFile], x, y, 0.5, 0.5)
-		x += maxWidth
+		x += maxWidth + padding
 	}
 
 	return g, nil
